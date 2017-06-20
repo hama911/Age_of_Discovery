@@ -163,6 +163,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Node.cpp" />
     <ClCompile Include="PlanetCreator.cpp" />
     <ClCompile Include="PlanetMain.cpp" />
     <ClCompile Include="Pos.cpp" />
@@ -281,6 +282,7 @@
     <Font Include="Example\YomogiFont.ttf" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Node.h" />
     <ClInclude Include="Planet.h" />
     <ClInclude Include="Pos.h" />
   </ItemGroup>
