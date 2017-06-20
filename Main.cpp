@@ -1,14 +1,18 @@
 ﻿
 # include <Siv3D.hpp>
+#include "Planet.h"
 
 void Main()
 {
-	const Font font(30);
+	Window::SetTitle(L"Age of Discovery");
+	Window::Resize(1280, 720);
+	Window::SetStyle(WindowStyle::Sizeable);
+	Planet planet(1024, 0.05);
 
 	while (System::Update())
 	{
-		font(L"ようこそ、Siv3D の世界へ！").draw();
-
-		Circle(Mouse::Pos(), 50).draw({ 255, 0, 0, 127 });
+		if (Input::KeyF5.clicked) planet.recreate();
+		planet.update();
+		planet.draw();
 	}
 }
