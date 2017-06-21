@@ -11,6 +11,8 @@ Planet::Planet(const int& _size, const double& _nodeInterval)
 void	Planet::recreate()
 {
 	nodes.clear();
+	cities.clear();
+	citizens.clear();
 	create();
 }
 
@@ -33,7 +35,7 @@ void	Planet::create()
 	{
 		const Pos pos(Vec2(p.x - size, p.y - size / 2)*Pi / double(size));
 		Color& o = mapImage[p.y][p.x];
-		if (getHeight(pos) < 0) o = Palette::Blue;
+		if (getHeight(pos) < 0.60) o = Palette::Blue;
 		else o = Palette::Green;
 
 		//ロードエフェクト
@@ -55,7 +57,7 @@ void	Planet::create()
 		for (int i = 0; i < num; i++)
 		{
 			const double x = d*i - Pi + a;
-			nodes.push_back(Node(Pos(Vec2(x, y))));
+			nodes.push_back(Node(int(nodes.size()), Pos(Vec2(x, y))));
 
 			//ロードエフェクト
 			if (stopwatch.ms() > 16)
@@ -75,7 +77,7 @@ void	Planet::create()
 			auto& n1 = nodes[i];
 			auto& n2 = nodes[j];
 			if (&n1 != &n2 && n1.pos.ePos.distanceFrom(n2.pos.ePos) < nodeInterval*1.41)
-				n1.paths.push_back(Path(&n1, &n2));
+				n1.paths.push_back(Path(i, j));
 
 			//ロードエフェクト
 			if (stopwatch.ms() > 16) {
@@ -91,13 +93,13 @@ void	Planet::create()
 		auto& n = nodes[i];
 		double len = 0.0;
 		for (auto& w : n.paths) {
-			const double d = w.child->pos.ePos.distanceFrom(w.parent->pos.ePos);
+			const double d = nodes[w.childNodeID].pos.ePos.distanceFrom(nodes[w.parentNodeID].pos.ePos);
 			if (len == 0.0 || len > d) len = d;
 		}
 		Vec2 p = RandomVec2(Random(len / 2.0));
 		p.x /= Cos(n.pos.mPos.y);
 		n.pos.set(n.pos.mPos.movedBy(p));
-		n.isSea = getHeight(n.pos.ePos) < 0 ? true : false;
+		n.isSea = getHeight(n.pos.ePos) < 0.60 ? true : false;
 
 		//ロードエフェクト
 		if (stopwatch.ms() > 16)
@@ -110,13 +112,35 @@ void	Planet::create()
 
 	//全Pathの距離の登録
 	for (auto& n : nodes)
+	{
 		for (auto& w : n.paths)
-			w.len = w.child->pos.ePos.distanceFrom(w.parent->pos.ePos);
+		{
+			auto& childNode = nodes[w.childNodeID];
+			if (!n.isSea && childNode.isSea) n.isCoast = true;
+			w.len = childNode.pos.ePos.distanceFrom(n.pos.ePos);
+		}
+	}
+
+	//Cityの配置
+	const int numCities = 50;
+	for (int i = 0; i < numCities; i++) {
+		cities.push_back(int(cities.size()));
+		auto& c = cities.back();
+		c.name = L"ミュンヘン";
+		c.numCitizens = 100;
+		do c.joinedNodeID = Random(int(nodes.size()) - 1);
+		while (nodes[c.joinedNodeID].ownCityID != -1 || nodes[c.joinedNodeID].isSea);
+		nodes[c.joinedNodeID].ownCityID = c.id;
+	}
+
+	//全ルートの生成
+	routes.clear();
+	makeAllRoute();
 
 	Window::SetTitle(L"Age of Discovery");
 }
 
 double	Planet::getHeight(const Pos& _pos) const
 {
-	return heightNoise.octaveNoise(_pos.ePos, 10);
+	return (heightNoise.octaveNoise(_pos.ePos, 10) + 1.0)*0.5;
 }

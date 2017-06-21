@@ -5,16 +5,18 @@ struct Node;
 
 struct Path
 {
-	Path(Node* _parent, Node* _child);
-	Node*	parent;	//接続元ノード
-	Node*	child;	//接続先ノード
+	Path(const int& _parentNodeID, const int& _childNodeID);
 	double	len;	//三次元座標上の距離
+
+	int		parentNodeID;
+	int		childNodeID;
 };
 
 struct Node
 {
-
-	Node(const Pos& _pos);
+	int		id;
+	Node(const int& _id, const Pos& _pos);
+	bool	isCoast;
 	bool	isSea;
 	Pos		pos;
 	Array<Path> paths;
@@ -23,5 +25,7 @@ struct Node
 	bool	isInQueue;
 	bool	isScaned;
 	double	cost;
-	Node*	from;
+
+	int		fromNodeID;
+	int		ownCityID;
 };

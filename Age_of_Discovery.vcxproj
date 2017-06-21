@@ -162,11 +162,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="City.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="PlanetCreator.cpp" />
     <ClCompile Include="PlanetMain.cpp" />
     <ClCompile Include="Pos.cpp" />
+    <ClCompile Include="Route.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
@@ -282,9 +284,11 @@
     <Font Include="Example\YomogiFont.ttf" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="City.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Planet.h" />
     <ClInclude Include="Pos.h" />
+    <ClInclude Include="Route.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
