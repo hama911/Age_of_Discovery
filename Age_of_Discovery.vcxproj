@@ -169,6 +169,7 @@
     <ClCompile Include="PlanetMain.cpp" />
     <ClCompile Include="Pos.cpp" />
     <ClCompile Include="Route.cpp" />
+    <ClCompile Include="Vehicle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
@@ -285,6 +286,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="City.h" />
+    <ClInclude Include="Company.h" />
+    <ClInclude Include="Item.h" />
+    <ClInclude Include="Market.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Planet.h" />
     <ClInclude Include="Pos.h" />

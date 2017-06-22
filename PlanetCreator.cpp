@@ -5,6 +5,7 @@
 Planet::Planet(const int& _size, const double& _nodeInterval)
 	: size(_size), nodeInterval(_nodeInterval), mapImage(size * 2, size)
 {
+	selectedCityID = -1;
 	create();
 }
 
@@ -121,16 +122,115 @@ void	Planet::create()
 		}
 	}
 
+	//Pathsに登録
+	paths.clear();
+	for (auto& n : nodes)
+	{
+		for (auto& p : n.paths)
+		{
+			p.id = int(paths.size());
+			paths.push_back(&p);
+		}
+	}
+
+	//regionの設定
+	regions.clear();
+	for (auto& n : nodes)
+	{
+		if (!n.isSea && n.joinedRegionID == -1)
+		{
+			regions.push_back(int(regions.size()));
+			auto& r = regions.back();
+			n.joinedRegionID = r.id;
+			r.numNodes++;
+			Array<Node*> nodeTemp;
+			nodeTemp.push_back(&n);
+			for (int i = 0; i < nodeTemp.size(); i++)
+			{
+				for (auto& p : nodeTemp[i]->paths)
+				{
+					auto& n2 = nodes[p.childNodeID];
+					if (!n2.isSea && n2.joinedRegionID == -1)
+					{
+						n2.joinedRegionID = r.id;
+						r.numNodes++;
+						nodeTemp.push_back(&n2);
+					}
+				}
+			}
+		}
+	}
+
 	//Cityの配置
-	const int numCities = 50;
+	int numCities = 100;
+	for (;;)
+	{
+		auto& n = nodes[Random(nodes.size() - 1)];
+		if (n.joinedRegionID != -1 && !regions[n.joinedRegionID].hasCity && n.isCoast)
+		{
+			cities.push_back(int(cities.size()));
+			auto& c = cities.back();
+			c.numCitizens = 100;
+			c.joinedNodeID = n.id;
+			nodes[c.joinedNodeID].ownCityID = c.id;
+			regions[n.joinedRegionID].hasCity = true;
+			numCities--;
+
+			bool flag = true;
+			for (const auto& nt : nodes)
+			{
+				if (nt.joinedRegionID != -1 && !regions[nt.joinedRegionID].hasCity) flag = false;
+			}
+			if (flag) break;
+		}
+	}
+
 	for (int i = 0; i < numCities; i++) {
 		cities.push_back(int(cities.size()));
 		auto& c = cities.back();
-		c.name = L"ミュンヘン";
 		c.numCitizens = 100;
 		do c.joinedNodeID = Random(int(nodes.size()) - 1);
 		while (nodes[c.joinedNodeID].ownCityID != -1 || nodes[c.joinedNodeID].isSea);
 		nodes[c.joinedNodeID].ownCityID = c.id;
+	}
+
+	//Cityに名前を設定
+	CSVReader csv(L"Assets/CityName.csv");
+	if (csv)
+	{
+		Array<String> names;
+		for (int i = 0; i < csv.rows; i++)
+			names.push_back(csv.getOr<String>(i, 0, L""));
+		for (auto& c : cities)
+		{
+			const int i = Random(int(names.size() - 1));
+			c.name = names[i];
+			names.erase(names.begin() + i);
+			if (names.empty()) break;
+		}
+	}
+
+	//Companyの配置
+	int	numCompanies = 20;
+	for (int i = 0; i < numCompanies; i++)
+	{
+		companies.push_back(int(companies.size()));
+		auto& c = companies.back();
+		for (;;)
+		{
+			auto& t = cities[Random(int(cities.size() - 1))];
+			if (nodes[t.joinedNodeID].isCoast)
+			{
+				int numVehicles = Random(3, 10);
+				for (int j = 0; j < numVehicles; j++)
+				{
+					c.vehicles.push_back(int(c.vehicles.size()));
+					auto& v = c.vehicles.back();
+					v.stayedInNodeID = t.joinedNodeID;
+				}
+				break;
+			}
+		}
 	}
 
 	//全ルートの生成
@@ -144,3 +244,6 @@ double	Planet::getHeight(const Pos& _pos) const
 {
 	return (heightNoise.octaveNoise(_pos.ePos, 10) + 1.0)*0.5;
 }
+
+Region::Region(const int& _id)
+	:id(_id), name(L""), numNodes(0), hasCity(false) {}

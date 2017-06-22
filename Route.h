@@ -9,7 +9,7 @@ struct Route
 	String	name;
 	int		destinationNodeID;
 	int		originNodeID;
-	Array<Path*>	paths;
+	Array<int>	pathIDs;
 	double	totalLength;
 	bool	isSeaRoute;
 };

@@ -3,8 +3,19 @@
 #include "Node.h"
 #include "City.h"
 #include "Route.h"
+#include "Company.h"
+#include "Item.h"
 
 struct Pos;
+
+struct Region
+{
+	Region(const int& _id);
+	int		id;
+	String	name;
+	int		numNodes;
+	bool	hasCity;
+};
 
 struct Planet
 {
@@ -15,12 +26,19 @@ struct Planet
 	void	update();
 	void	draw() const;
 	void	makeAllRoute();
+	void	drawInfoBox(const Vec2& _pos, const Vec2& _size) const;
 	double	getHeight(const Pos& _pos) const;
 
+	Array<ItemD>	itemD;
+	Array<VehicleD>	vehicleD;
+	Array<Company>	companies;
+	Array<Region>	regions;
 	Array<Node>		nodes;
 	Array<City>		cities;
 	Array<Citizen>	citizens;
 	Array<Route>	routes;
+	Array<Path*>	paths;
+	int		selectedCityID;
 	int		size;
 	double	nodeInterval;
 	Mat3x2	transform;

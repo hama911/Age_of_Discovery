@@ -7,7 +7,7 @@ void Main()
 	Window::SetTitle(L"Age of Discovery");
 	Window::Resize(1280, 720);
 	Window::SetStyle(WindowStyle::Sizeable);
-	Planet planet(512, 0.04);
+	Planet planet(512, 0.050);
 
 	while (System::Update())
 	{
