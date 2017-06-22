@@ -3,11 +3,13 @@
 
 struct ItemD
 {
-	String name;
+	String	name;
+	String	description;
+	double	volume;
 };
 
 struct Item
 {
-	int		itemID;
+	int		type;
 	int		num;
 };

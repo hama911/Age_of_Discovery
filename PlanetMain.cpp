@@ -63,6 +63,7 @@ void	Planet::draw() const
 			{
 				double len = v.progress;
 				const auto& r = routes[v.inProcessRouteID];
+				const auto& vData = vehicleD[v.type];
 				for (const auto& pID : r.pathIDs)
 				{
 					const auto& p = paths[pID];
@@ -75,7 +76,9 @@ void	Planet::draw() const
 							if (pos1.x < 0) pos2.moveBy(-TwoPi, 0);
 							else pos1.moveBy(-TwoPi, 0);
 						}
-						Circle(pos1.lerp(pos2, len / p->len), 0.005).draw(Palette::Yellow);
+						const double theta = Atan2((pos2 - pos1).y, (pos2 - pos1).x);
+						Triangle(0.02).rotated(theta+HalfPi).movedBy(pos1.lerp(pos2, len / p->len)).drawFrame(0.01,Palette::Black).draw(HSV(vData.id*72));
+						//Circle(pos1.lerp(pos2, len / p->len), 0.005).draw(Palette::Yellow);
 						break;
 					}
 					else len -= p->len;
@@ -136,17 +139,18 @@ void	Planet::update()
 	{
 		for (auto& v : c.vehicles)
 		{
+			const auto& vData = vehicleD[v.type];
 			if (v.inProcessRouteID == -1)
 			{
 				bool flag = false;
 				for (auto& r : routes)
-					if (r.originNodeID == v.stayedInNodeID) flag = true;
+					if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData.isShip && r.totalLength < vData.range) flag = true;
 				if (flag)
 				{
 					for (;;)
 					{
 						auto& r = routes[Random(int(routes.size() - 1))];
-						if (r.originNodeID == v.stayedInNodeID)
+						if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData.isShip && r.totalLength < vData.range)
 						{
 							v.inProcessRouteID = r.id;
 							v.progress = 0.0;
@@ -157,7 +161,7 @@ void	Planet::update()
 			}
 			else
 			{
-				v.progress += 0.01;
+				v.progress += vData.speed;
 				auto& r = routes[v.inProcessRouteID];
 				if (v.progress >= r.totalLength)
 				{

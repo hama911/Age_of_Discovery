@@ -9,10 +9,13 @@ struct Mission
 
 struct VehicleD
 {
+	VehicleD(const int& _id);
 	int		id;
 	String	name;
+	String	description;
 	double	range;
 	double	space;
+	double	speed;
 	bool	isShip;
 	
 };
@@ -20,6 +23,7 @@ struct VehicleD
 struct Vehicle
 {
 	Vehicle(const int& _id);
+	int		type;
 	int		id;
 	double	progress;
 

@@ -24,11 +24,35 @@ void	Planet::recreate(const int& _size, const double& _nodeInterval)
 	recreate();
 }
 
+VehicleD::VehicleD(const int& _id)
+	: id(_id) {}
 void	Planet::create()
 {
 	font = Font(12);
 	transform = Mat3x2::Identity().scale(200).translate(Window::Center());
 	heightNoise = PerlinNoise(Random(UINT32_MAX - 1));
+
+	//Itemデータの読み込み
+	JSONReader json(L"Assets/ItemData.json");
+	for (auto& item : json[L"ItemData"].getArray())
+	{
+		itemD.push_back(ItemD());
+		auto& i = itemD.back();
+		i.name = item[L"Name"].getOr<String>(L"none");
+		i.description = item[L"Description"].getOr<String>(L"noData");
+		i.volume = item[L"volume"].getOr<double>(0.01);
+	}
+	for (auto& vehicle : json[L"VehicleData"].getArray())
+	{
+		vehicleD.push_back(VehicleD(int(vehicleD.size())));
+		auto& v = vehicleD.back();
+		v.name = vehicle[L"Name"].getOr<String>(L"none");
+		v.description = vehicle[L"Description"].getOr<String>(L"noData");
+		v.speed = vehicle[L"Speed"].getOr<double>(0.01);
+		v.range = vehicle[L"Range"].getOr<double>(1000);
+		v.space = vehicle[L"Space"].getOr<double>(1000);
+		v.isShip = vehicle[L"IsShip"].getOr<bool>(true);
+	}
 
 	//マップの生成
 	Stopwatch stopwatch(true);
@@ -227,6 +251,7 @@ void	Planet::create()
 					c.vehicles.push_back(int(c.vehicles.size()));
 					auto& v = c.vehicles.back();
 					v.stayedInNodeID = t.joinedNodeID;
+					v.type = Random(int(vehicleD.size() - 1));
 				}
 				break;
 			}
