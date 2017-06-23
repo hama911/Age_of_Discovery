@@ -120,7 +120,14 @@ void	Planet::draw() const
 	for (const auto& c : cities)
 	{
 		const auto& n = nodes[c.joinedNodeID];
-		Circle(n.pos.mPos, 0.01).draw(Palette::Red);
+		const double& s = c.getDrawSize();
+		const Color& color = HSV(c.canProduceItemType * 30);
+		if (n.isCoast)
+		{
+			Circle(n.pos.mPos, s).drawFrame(s*0.25, 0.0, color);
+			Circle(n.pos.mPos, s*0.5).draw(color);
+		}
+		else Circle(n.pos.mPos, s).draw(color);
 	}
 
 
@@ -135,10 +142,50 @@ void	Planet::draw() const
 		Vec2 pos(0, 0);
 		drawInfoBox(pos, Vec2(480, 24));
 		font(c.name).drawCenter(pos + Vec2(240, 12));
-
 		pos.moveBy(0, 24);
+
 		drawInfoBox(pos, Vec2(160, 24));
 		font(L"‘lŒû:", c.citizens.size(), L"l").drawCenter(pos + Vec2(80, 12));
+		pos.moveBy(0, 24);
+
+		drawInfoBox(pos, Vec2(160, 48));
+		font(L"¶Y•¨:", iData[c.canProduceItemType].name).draw(pos + Vec2(12, 0));
+
+		TradeLog tradeLog = c.market.getTradeRatePrevious(c.canProduceItemType);
+		if (tradeLog.num > 0) font(L"•½‹Ï‰¿Ši:", tradeLog.sum / tradeLog.num).draw(pos + Vec2(12, 24));
+		else font(L"•½‹Ï‰¿Ši:").draw(pos + Vec2(12, 24));
+		pos.moveBy(0, 48);
+
+		//¤“X‚Ìî•ñ
+		pos = Vec2(160, 24);
+		drawInfoBox(pos, Vec2(320, 24));
+		font(L"¤“X").drawCenter(pos + Vec2(160, 12));
+		pos = Vec2(160, 48);
+		for (auto& s : c.market.stores)
+		{
+			drawInfoBox(pos, Vec2(320, 24));
+			font(s.name).draw(pos + Vec2(12, 0));
+			pos.moveBy(0, 24);
+		}
+		pos = Vec2(160, 48);
+		for (const auto& s : c.market.stores)
+		{
+			if (RectF(pos, Vec2(320, 24)).mouseOver)
+			{
+				pos = Mouse::PosF();
+				drawInfoBox(Mouse::PosF(), Vec2(160, 24 * s.shelves.size()));
+				for (const auto& h : s.shelves)
+				{
+					if (h.previous.num > 0)
+					{
+						font(iData[h.itemType].name, h.previous.sum / h.previous.num).draw(pos + Vec2(12, 0));
+					}
+					else font(iData[h.itemType].name).draw(pos + Vec2(12, 0));
+				}
+				break;
+			}
+			pos.moveBy(0, 24);
+		}
 
 	}
 
@@ -151,6 +198,7 @@ void	Planet::drawInfoBox(const Vec2& _pos, const Vec2& _size) const
 
 void	Planet::update()
 {
+
 	Mouse::SetTransform(transform);
 
 	//City‚Ì‘I‘ğ
@@ -159,7 +207,7 @@ void	Planet::update()
 		selectedCityID = -1;
 		for (const auto& c : cities)
 		{
-			if (Circle(nodes[c.joinedNodeID].pos.mPos, 0.01).mouseOver) selectedCityID = c.id;
+			if (Circle(nodes[c.joinedNodeID].pos.mPos, c.getDrawSize()).mouseOver) selectedCityID = c.id;
 		}
 	}
 
@@ -201,22 +249,79 @@ void	Planet::update()
 		}
 	}
 
+	//City‚ÌXV
 	for (auto& t : cities)
 	{
-		//Citizens‚ÌXV
-		for (auto& s : t.citizens)
+		t.time += timeSpeed;
+		if (t.time >= 1.0)
 		{
-			
+			t.time -= 1.0;
+			//Market‚Ì´Z
+			for (auto& s : t.market.stores)
+			{
+				for (auto& h : s.shelves)
+				{
+					h.previous.num = h.today.num;
+					h.previous.sum = h.today.sum;
+					h.today.num = 0;
+					h.today.sum = 0;
+				}
+			}
+		}
+		//Citizens‚ÌXV
+		for (auto& u : t.citizens)
+		{
+			//w“ü‚·‚é¤•i‚Ìí—Ş
+			auto i = Random(int(iData.size() - 1));
+
+			//w“ü‚µ‚És‚­¤“X
+			if (!t.market.stores.empty())
+			{
+				auto& s = t.market.stores[Random(int(t.market.stores.size() - 1))];
+
+				for (auto& h : s.shelves)
+				{
+					if (h.itemType == i && !h.baskets.empty() && h.baskets.front().price < u.income)
+					{
+						//w“ü
+						h.today.num++;
+						h.today.sum += h.baskets.front().price;
+						h.baskets.erase(h.baskets.begin());
+						break;
+					}
+				}
+			}
 		}
 
-		//Market‚ÌXV
+		//Store‚Ì‰¿ŠiXV
 		for (auto& s : t.market.stores)
 		{
 			for (auto& h : s.shelves)
 			{
 				for (auto& b : h.baskets)
 				{
+					b.price = Max(b.price - 10, 0);
+				}
+			}
+		}
 
+		//¶Y•¨
+		auto i = Item();
+		i.num = 5;
+		i.type = t.canProduceItemType;
+		//Market‚ÌItem’Ç‰Á
+		for (auto& s : t.market.stores)
+		{
+			bool flag = true;
+			for (const auto& h : s.shelves) if (h.itemType == i.type) flag = false;
+			if (flag) s.shelves.push_back(Shelf(i.type));
+
+			for (auto& h : s.shelves)
+			{
+				if (h.itemType == i.type)
+				{
+					if (h.previous.num > 0) h.baskets.push_back(Basket(i, Random(h.previous.sum / h.previous.num, 10000)));
+					else h.baskets.push_back(Basket(i, 10000));
 				}
 			}
 		}

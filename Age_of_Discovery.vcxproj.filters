@@ -351,6 +351,12 @@
     <None Include="Assets\ItemData.json">
       <Filter>リソース ファイル\Assets</Filter>
     </None>
+    <None Include="Assets\CityName.csv">
+      <Filter>リソース ファイル\Assets</Filter>
+    </None>
+    <None Include="Assets\CompanyName.csv">
+      <Filter>リソース ファイル\Assets</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Engine\dll(x64)\libmpg123\COPYING.txt">

@@ -28,11 +28,14 @@ VData::VData(const int& _id)
 	: id(_id) {}
 void	Planet::create()
 {
+	timeSpeed = 0.01;
 	font = Font(12);
 	transform = Mat3x2::Identity().scale(200).translate(Window::Center());
 	heightNoise = PerlinNoise(Random(UINT32_MAX - 1));
 
 	//Itemデータの読み込み
+	iData.clear();
+	vData.clear();
 	JSONReader json(L"Assets/ItemData.json");
 	for (auto& item : json[L"ItemData"].getArray())
 	{
@@ -189,7 +192,7 @@ void	Planet::create()
 	}
 
 	//Cityの配置
-	int numCities = 100;
+	int numCities = 50;
 	for (;;)
 	{
 		auto& n = nodes[Random(nodes.size() - 1)];
@@ -227,19 +230,19 @@ void	Planet::create()
 		{
 			t.citizens.push_back(Citizen());
 			auto& s = t.citizens.back();
-			s.income = Pow(Random(1.0), 4)*10000.0;
+			s.income = int(Pow(Random(1.0), 4)*10000.0);
 			s.joinedCityID = t.id;
 			s.name = L"ボブ";
 		}
 	}
 
 	//Cityに名前を設定
-	CSVReader csv(L"Assets/CityName.csv");
-	if (csv)
+	CSVReader cityNameCSV(L"Assets/CityName.csv");
+	if (cityNameCSV)
 	{
 		Array<String> names;
-		for (int i = 0; i < csv.rows; i++)
-			names.push_back(csv.getOr<String>(i, 0, L""));
+		for (int i = 0; i < cityNameCSV.rows; i++)
+			names.push_back(cityNameCSV.getOr<String>(i, 0, L""));
 		for (auto& c : cities)
 		{
 			const int i = Random(int(names.size() - 1));
@@ -249,29 +252,78 @@ void	Planet::create()
 		}
 	}
 
-	//Companyの配置
-	int	numCompanies = 20;
-	for (int i = 0; i < numCompanies; i++)
+	//City諸設定
+	for (auto& c : cities)
 	{
+		c.time = nodes[c.joinedNodeID].pos.mPos.x / TwoPi + 0.5;
+		c.canProduceItemType = Random(int(iData.size() - 1));
+	}
+
+	//Companyの生成
+	companies.clear();
+	const int	numCompanies = 150;
+	for (int i = 0; i < numCompanies; i++)
 		companies.push_back(int(companies.size()));
-		auto& c = companies.back();
-		for (;;)
+
+	//Companyに名前を設定
+	CSVReader companyNameCSV(L"Assets/CompanyName.csv");
+	if (companyNameCSV)
+	{
+		Array<String> names;
+		for (int i = 0; i < companyNameCSV.rows; i++)
+			names.push_back(companyNameCSV.getOr<String>(i, 0, L""));
+		for (auto& c : companies)
 		{
-			auto& t = cities[Random(int(cities.size() - 1))];
-			if (nodes[t.joinedNodeID].isCoast)
-			{
-				int numVehicles = Random(3, 10);
-				for (int j = 0; j < numVehicles; j++)
-				{
-					c.vehicles.push_back(int(c.vehicles.size()));
-					auto& v = c.vehicles.back();
-					v.stayedInNodeID = t.joinedNodeID;
-					v.type = Random(int(vData.size() - 1));
-				}
-				break;
-			}
+			const int i = Random(int(names.size() - 1));
+			c.name = names[i];
+			names.erase(names.begin() + i);
+			if (names.empty()) break;
 		}
 	}
+
+	//Companyの配置
+	for (auto& c : companies)
+	{
+		auto& t = cities[Random(int(cities.size() - 1))];
+		//Storeの配置
+		t.market.stores.push_back(Store());
+		auto& s = t.market.stores.back();
+		s.name = Format(c.name + L"-直営店");
+		s.joinedCompanyID = c.id;
+		for (auto& t2 : cities)
+		{
+			if (t2.id != t.id && RandomBool(0.0))
+			{
+				t2.market.stores.push_back(Store());
+				auto& s2 = t2.market.stores.back();
+				s2.name = Format(c.name + L"-支店");
+				s2.joinedCompanyID = c.id;
+
+			}
+		}
+
+		//Vehicleの追加
+		if (nodes[t.joinedNodeID].isCoast)
+		{
+			c.vehicles.push_back(int(c.vehicles.size()));
+			auto& v = c.vehicles.back();
+			v.stayedInNodeID = t.joinedNodeID;
+			v.type = 2;
+
+			c.vehicles.push_back(int(c.vehicles.size()));
+			auto& v2 = c.vehicles.back();
+			v2.stayedInNodeID = t.joinedNodeID;
+			v2.type = 0;
+		}
+		else
+		{
+			c.vehicles.push_back(int(c.vehicles.size()));
+			auto& v = c.vehicles.back();
+			v.stayedInNodeID = t.joinedNodeID;
+			v.type = 0;
+		}
+	}
+
 
 	//全ルートの生成
 	routes.clear();

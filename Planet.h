@@ -29,6 +29,7 @@ struct Planet
 	void	drawInfoBox(const Vec2& _pos, const Vec2& _size) const;
 	double	getHeight(const Pos& _pos) const;
 
+	double	timeSpeed;
 	Array<IData>	iData;
 	Array<VData>	vData;
 	Array<Company>	companies;

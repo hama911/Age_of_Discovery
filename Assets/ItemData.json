@@ -17,10 +17,10 @@
             "IsShip" : false
         },
         {
-            "Name" : "一等帆船",
-            "Description" : "長距離航海用の船。中型の容量に長大な航続距離を誇る",
-            "Range" : 2.0,
-            "Space" : 80.0,
+            "Name" : "三等帆船",
+            "Description" : "短距離航海用の船。船体が小型で、維持費が安い",
+            "Range" : 0.8,
+            "Space" : 50.0,
             "Speed" : 0.01,
             "IsShip" : true
         },
@@ -29,15 +29,15 @@
             "Description" : "中距離航海用の船。船体が大型で最も多くの資源を積める",
             "Range" : 1.0,
             "Space" : 100.0,
-            "Speed" : 0.015,
+            "Speed" : 0.008,
             "IsShip" : true
         },
         {
-            "Name" : "三等帆船",
-            "Description" : "短距離航海用の船。船体が小型で、維持費が安い",
-            "Range" : 0.5,
-            "Space" : 50.0,
-            "Speed" : 0.02,
+            "Name" : "一等帆船",
+            "Description" : "長距離航海用の船。中型の容量に長大な航続距離を誇る",
+            "Range" : 2.0,
+            "Space" : 80.0,
+            "Speed" : 0.005,
             "IsShip" : true
         }
     ],
