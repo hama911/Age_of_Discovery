@@ -5,6 +5,7 @@ Node::Node(const int& _id, const Pos& _pos)
 {
 	joinedRegionID = -1;
 	isSea = false;
+	isOcean = false;
 	isCoast = false;
 	pos = _pos;
 	paths.clear();

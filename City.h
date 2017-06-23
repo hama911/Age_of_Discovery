@@ -1,5 +1,6 @@
 #pragma once
 #include<Siv3D.hpp>
+#include "Market.h"
 
 struct Node;
 
@@ -8,6 +9,7 @@ struct Citizen
 	String	name;
 	int		joinedCityID;
 
+	int		income;
 };
 
 struct City
@@ -16,8 +18,11 @@ struct City
 
 	int		id;
 
+	int		money;
+
+	Market	market;
+
 	String	name;
-	int		numCitizens;
 	int		joinedNodeID;
 
 	Array<Citizen>	citizens;

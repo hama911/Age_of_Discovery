@@ -7,9 +7,9 @@ struct Mission
 
 };
 
-struct VehicleD
+struct VData
 {
-	VehicleD(const int& _id);
+	VData(const int& _id);
 	int		id;
 	String	name;
 	String	description;
@@ -17,7 +17,7 @@ struct VehicleD
 	double	space;
 	double	speed;
 	bool	isShip;
-	
+
 };
 
 struct Vehicle
@@ -36,6 +36,8 @@ struct Company
 	Company(const int& _id);
 	int		id;
 	String	name;
+
+	int		money;
 
 	Array<Vehicle> vehicles;
 };

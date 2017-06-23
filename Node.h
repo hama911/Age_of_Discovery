@@ -20,6 +20,7 @@ struct Node
 	int		id;
 	bool	isCoast;
 	bool	isSea;
+	bool	isOcean;
 	Pos		pos;
 	Array<Path> paths;
 

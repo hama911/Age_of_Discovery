@@ -33,6 +33,36 @@ void	Planet::draw() const
 		}
 	}
 
+	//Oceanの描画
+	if (Input::KeyU.pressed)
+	{
+		for (const auto& n : nodes)
+		{
+			if (!n.isOcean && n.isSea)
+			{
+				for (const auto& p : n.paths)
+				{
+					const auto& childNode = nodes[p.childNodeID];
+					if (!childNode.isOcean && childNode.isSea)
+					{
+						const auto& n1 = n;
+						const auto& n2 = childNode;
+						const auto& color = Palette::Green;
+						if (n2.joinedRegionID == n.joinedRegionID)
+						{
+							if (Abs(n1.pos.mPos.x - n2.pos.mPos.x) > Pi)
+							{
+								if (n1.pos.mPos.x < 0) Line(n1.pos.mPos, n2.pos.mPos.movedBy(-TwoPi, 0)).draw(0.004, color);
+								else Line(n1.pos.mPos.movedBy(-TwoPi, 0), n2.pos.mPos).draw(0.004, color);
+							}
+							else Line(n1.pos.mPos, n2.pos.mPos).draw(0.004, color);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	//ルートの描画
 	if (Input::KeyY.pressed)
 	{
@@ -63,7 +93,6 @@ void	Planet::draw() const
 			{
 				double len = v.progress;
 				const auto& r = routes[v.inProcessRouteID];
-				const auto& vData = vehicleD[v.type];
 				for (const auto& pID : r.pathIDs)
 				{
 					const auto& p = paths[pID];
@@ -77,7 +106,7 @@ void	Planet::draw() const
 							else pos1.moveBy(-TwoPi, 0);
 						}
 						const double theta = Atan2((pos2 - pos1).y, (pos2 - pos1).x);
-						Triangle(0.02).rotated(theta+HalfPi).movedBy(pos1.lerp(pos2, len / p->len)).drawFrame(0.01,Palette::Black).draw(HSV(vData.id*72));
+						Triangle(0.02).rotated(theta + HalfPi).movedBy(pos1.lerp(pos2, len / p->len)).drawFrame(0.01, Palette::Black).draw(HSV(vData[v.type].id * 72));
 						//Circle(pos1.lerp(pos2, len / p->len), 0.005).draw(Palette::Yellow);
 						break;
 					}
@@ -109,7 +138,7 @@ void	Planet::draw() const
 
 		pos.moveBy(0, 24);
 		drawInfoBox(pos, Vec2(160, 24));
-		font(L"総人口:", c.numCitizens, L"人").drawCenter(pos + Vec2(80, 12));
+		font(L"総人口:", c.citizens.size(), L"人").drawCenter(pos + Vec2(80, 12));
 
 	}
 
@@ -139,18 +168,17 @@ void	Planet::update()
 	{
 		for (auto& v : c.vehicles)
 		{
-			const auto& vData = vehicleD[v.type];
 			if (v.inProcessRouteID == -1)
 			{
 				bool flag = false;
 				for (auto& r : routes)
-					if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData.isShip && r.totalLength < vData.range) flag = true;
+					if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData[v.type].isShip && r.totalLength < vData[v.type].range) flag = true;
 				if (flag)
 				{
 					for (;;)
 					{
 						auto& r = routes[Random(int(routes.size() - 1))];
-						if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData.isShip && r.totalLength < vData.range)
+						if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData[v.type].isShip && r.totalLength < vData[v.type].range)
 						{
 							v.inProcessRouteID = r.id;
 							v.progress = 0.0;
@@ -161,7 +189,7 @@ void	Planet::update()
 			}
 			else
 			{
-				v.progress += vData.speed;
+				v.progress += vData[v.type].speed;
 				auto& r = routes[v.inProcessRouteID];
 				if (v.progress >= r.totalLength)
 				{
@@ -172,6 +200,28 @@ void	Planet::update()
 			}
 		}
 	}
+
+	for (auto& t : cities)
+	{
+		//Citizensの更新
+		for (auto& s : t.citizens)
+		{
+			
+		}
+
+		//Marketの更新
+		for (auto& s : t.market.stores)
+		{
+			for (auto& h : s.shelves)
+			{
+				for (auto& b : h.baskets)
+				{
+
+				}
+			}
+		}
+	}
+
 
 	//カメラの更新
 	Mouse::ClearTransform();

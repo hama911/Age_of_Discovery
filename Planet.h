@@ -29,8 +29,8 @@ struct Planet
 	void	drawInfoBox(const Vec2& _pos, const Vec2& _size) const;
 	double	getHeight(const Pos& _pos) const;
 
-	Array<ItemD>	itemD;
-	Array<VehicleD>	vehicleD;
+	Array<IData>	iData;
+	Array<VData>	vData;
 	Array<Company>	companies;
 	Array<Region>	regions;
 	Array<Node>		nodes;

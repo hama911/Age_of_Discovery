@@ -1,7 +1,7 @@
 #pragma once
 #include <Siv3D.hpp>
 
-struct ItemD
+struct IData
 {
 	String	name;
 	String	description;

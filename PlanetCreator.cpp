@@ -24,7 +24,7 @@ void	Planet::recreate(const int& _size, const double& _nodeInterval)
 	recreate();
 }
 
-VehicleD::VehicleD(const int& _id)
+VData::VData(const int& _id)
 	: id(_id) {}
 void	Planet::create()
 {
@@ -36,16 +36,16 @@ void	Planet::create()
 	JSONReader json(L"Assets/ItemData.json");
 	for (auto& item : json[L"ItemData"].getArray())
 	{
-		itemD.push_back(ItemD());
-		auto& i = itemD.back();
+		iData.push_back(IData());
+		auto& i = iData.back();
 		i.name = item[L"Name"].getOr<String>(L"none");
 		i.description = item[L"Description"].getOr<String>(L"noData");
 		i.volume = item[L"volume"].getOr<double>(0.01);
 	}
 	for (auto& vehicle : json[L"VehicleData"].getArray())
 	{
-		vehicleD.push_back(VehicleD(int(vehicleD.size())));
-		auto& v = vehicleD.back();
+		vData.push_back(VData(int(vData.size())));
+		auto& v = vData.back();
 		v.name = vehicle[L"Name"].getOr<String>(L"none");
 		v.description = vehicle[L"Description"].getOr<String>(L"noData");
 		v.speed = vehicle[L"Speed"].getOr<double>(0.01);
@@ -138,10 +138,13 @@ void	Planet::create()
 	//‘SPath‚Ì‹——£‚Ì“o˜^
 	for (auto& n : nodes)
 	{
+		n.isOcean = n.isSea;
 		for (auto& w : n.paths)
 		{
 			auto& childNode = nodes[w.childNodeID];
 			if (!n.isSea && childNode.isSea) n.isCoast = true;
+			if (n.isSea && !childNode.isSea) n.isOcean = false;
+			n.isOcean = getHeight(n.pos.ePos) < 0.50 ? true : false;
 			w.len = childNode.pos.ePos.distanceFrom(n.pos.ePos);
 		}
 	}
@@ -194,7 +197,6 @@ void	Planet::create()
 		{
 			cities.push_back(int(cities.size()));
 			auto& c = cities.back();
-			c.numCitizens = 100;
 			c.joinedNodeID = n.id;
 			nodes[c.joinedNodeID].ownCityID = c.id;
 			regions[n.joinedRegionID].hasCity = true;
@@ -212,10 +214,23 @@ void	Planet::create()
 	for (int i = 0; i < numCities; i++) {
 		cities.push_back(int(cities.size()));
 		auto& c = cities.back();
-		c.numCitizens = 100;
 		do c.joinedNodeID = Random(int(nodes.size()) - 1);
 		while (nodes[c.joinedNodeID].ownCityID != -1 || nodes[c.joinedNodeID].isSea);
 		nodes[c.joinedNodeID].ownCityID = c.id;
+	}
+
+	//Citizens‚ÌÝ’è
+	for (auto& t : cities)
+	{
+		int numCitizens = Random(100, 1000);
+		for (int i = 0; i < numCitizens; i++)
+		{
+			t.citizens.push_back(Citizen());
+			auto& s = t.citizens.back();
+			s.income = Pow(Random(1.0), 4)*10000.0;
+			s.joinedCityID = t.id;
+			s.name = L"ƒ{ƒu";
+		}
 	}
 
 	//City‚É–¼‘O‚ðÝ’è
@@ -251,7 +266,7 @@ void	Planet::create()
 					c.vehicles.push_back(int(c.vehicles.size()));
 					auto& v = c.vehicles.back();
 					v.stayedInNodeID = t.joinedNodeID;
-					v.type = Random(int(vehicleD.size() - 1));
+					v.type = Random(int(vData.size() - 1));
 				}
 				break;
 			}
