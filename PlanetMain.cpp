@@ -100,13 +100,15 @@ void	Planet::draw() const
 					{
 						auto pos1 = nodes[p->parentNodeID].pos.mPos;
 						auto pos2 = nodes[p->childNodeID].pos.mPos;
+						//const Color color = HSV(vData[v.type].id * 72);
+						const Color color = v.stock.item.num == 0 ? Palette::Black : HSV(v.stock.item.type * 30);
 						if (Abs(pos1.x - pos2.x) > Pi)
 						{
 							if (pos1.x < 0) pos2.moveBy(-TwoPi, 0);
 							else pos1.moveBy(-TwoPi, 0);
 						}
 						const double theta = Atan2((pos2 - pos1).y, (pos2 - pos1).x);
-						Triangle(0.02).rotated(theta + HalfPi).movedBy(pos1.lerp(pos2, len / p->len)).drawFrame(0.01, Palette::Black).draw(HSV(vData[v.type].id * 72));
+						Triangle(0.02).rotated(theta + HalfPi).movedBy(pos1.lerp(pos2, len / p->len)).drawFrame(0.01, Palette::Black).draw(color);
 						//Circle(pos1.lerp(pos2, len / p->len), 0.005).draw(Palette::Yellow);
 						break;
 					}
@@ -148,6 +150,10 @@ void	Planet::draw() const
 		font(L"ëçêlå˚:", c.citizens.size(), L"êl").drawCenter(pos + Vec2(80, 12));
 		pos.moveBy(0, 24);
 
+		drawInfoBox(pos, Vec2(160, 24));
+		font(int(c.time * 24), L":", int((c.time*24.0 - int(c.time*24.0))*60.0)).draw(pos + Vec2(24, 0));
+		pos.moveBy(0, 24);
+
 		drawInfoBox(pos, Vec2(160, 48));
 		font(L"ê∂éYï®:", iData[c.canProduceItemType].name).draw(pos + Vec2(12, 0));
 
@@ -155,6 +161,19 @@ void	Planet::draw() const
 		if (tradeLog.num > 0) font(L"ïΩãœâøäi:", tradeLog.sum / tradeLog.num).draw(pos + Vec2(12, 24));
 		else font(L"ïΩãœâøäi:").draw(pos + Vec2(12, 24));
 		pos.moveBy(0, 48);
+
+		drawInfoBox(pos, Vec2(160, 12));
+		pos.moveBy(0, 12);
+
+		for (int i = 0; i < iData.size(); i++)
+		{
+			drawInfoBox(pos, Vec2(160, 48));
+			font(iData[i].name, L" ç›å…", c.market.getNumStock(i)).draw(pos + Vec2(12, 0));
+			TradeLog tradeLog2 = c.market.getTradeRatePrevious(i);
+			if (tradeLog2.num > 0) font(L"ïΩãœâøäi:", tradeLog2.sum / tradeLog2.num).draw(pos + Vec2(12, 24));
+			else font(L"ïΩãœâøäi:").draw(pos + Vec2(12, 24));
+			pos.moveBy(0, 48);
+		}
 
 		//è§ìXÇÃèÓïÒ
 		pos = Vec2(160, 24);
@@ -173,14 +192,11 @@ void	Planet::draw() const
 			if (RectF(pos, Vec2(320, 24)).mouseOver)
 			{
 				pos = Mouse::PosF();
-				drawInfoBox(Mouse::PosF(), Vec2(160, 24 * s.shelves.size()));
+				drawInfoBox(Mouse::PosF(), Vec2(240, 24 * s.shelves.size()));
 				for (const auto& h : s.shelves)
 				{
-					if (h.previous.num > 0)
-					{
-						font(iData[h.itemType].name, h.previous.sum / h.previous.num).draw(pos + Vec2(12, 0));
-					}
-					else font(iData[h.itemType].name).draw(pos + Vec2(12, 0));
+					font(iData[h.itemType].name, h.getNumStock(), L"å¬ ", h.baskets.front().price).draw(pos + Vec2(12, 0));
+					pos.moveBy(0, 24);
 				}
 				break;
 			}
@@ -198,7 +214,8 @@ void	Planet::drawInfoBox(const Vec2& _pos, const Vec2& _size) const
 
 void	Planet::update()
 {
-
+	if (Input::KeyF2.clicked) timeSpeed = Min(timeSpeed * 2.0, 1.0);
+	if (Input::KeyF1.clicked) timeSpeed = Max(timeSpeed / 2.0, 0.01);
 	Mouse::SetTransform(transform);
 
 	//CityÇÃëIë
@@ -220,12 +237,16 @@ void	Planet::update()
 			{
 				bool flag = false;
 				for (auto& r : routes)
+				{
+					if (v.joinedCityID != v.stayedInNodeID && r.destinationNodeID != v.joinedCityID) continue;
 					if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData[v.type].isShip && r.totalLength < vData[v.type].range) flag = true;
+				}
 				if (flag)
 				{
 					for (;;)
 					{
 						auto& r = routes[Random(int(routes.size() - 1))];
+						if (v.joinedCityID != v.stayedInNodeID && r.destinationNodeID != v.joinedCityID) continue;
 						if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData[v.type].isShip && r.totalLength < vData[v.type].range)
 						{
 							v.inProcessRouteID = r.id;
@@ -237,13 +258,54 @@ void	Planet::update()
 			}
 			else
 			{
-				v.progress += vData[v.type].speed;
+				v.progress += vData[v.type].speed*timeSpeed;
 				auto& r = routes[v.inProcessRouteID];
 				if (v.progress >= r.totalLength)
 				{
 					v.inProcessRouteID = -1;
 					v.stayedInNodeID = r.destinationNodeID;
 					v.progress = 0.0;
+
+					auto& t = cities[nodes[v.stayedInNodeID].ownCityID];
+					if (v.joinedCityID == v.stayedInNodeID)	//â∆Ç…íÖÇ¢ÇΩÇÁ
+					{
+						if (v.stock.item.num > 0)
+						{
+							for (auto& s : t.market.stores)
+							{
+								if (c.id == s.joinedCompanyID)
+								{
+									s.stocks.push_back(v.stock);
+								}
+							}
+							v.stock = Stock(Item());
+						}
+					}
+					else	//çwì¸èàóù
+					{
+						for (auto& s : t.market.stores)
+						{
+							if (s.isMunicipal && !s.shelves.empty())
+							{
+
+								auto& h = s.shelves.front();
+								for (int i = 0;; i++)
+								{
+									if (!h.baskets.empty() && i < 1000)
+									{
+										h.buy();
+									}
+									else
+									{
+										v.stock.day = int(r.totalLength / vData[v.type].speed) + 1;
+										v.stock.sellEnabled = true;
+										v.stock.item = Item(h.itemType, i);
+										break;
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -261,70 +323,97 @@ void	Planet::update()
 			{
 				for (auto& h : s.shelves)
 				{
+					h.previousStock = h.getNumStock();
 					h.previous.num = h.today.num;
 					h.previous.sum = h.today.sum;
 					h.today.num = 0;
 					h.today.sum = 0;
 				}
 			}
-		}
-		//CitizensÇÃçXêV
-		for (auto& u : t.citizens)
-		{
-			//çwì¸Ç∑ÇÈè§ïiÇÃéÌóﬁ
-			auto i = Random(int(iData.size() - 1));
 
-			//çwì¸ÇµÇ…çsÇ≠è§ìX
-			if (!t.market.stores.empty())
+			//StoreÇÃâøäiçXêV & è§ïií«â¡
+			for (auto& s : t.market.stores)
 			{
-				auto& s = t.market.stores[Random(int(t.market.stores.size() - 1))];
-
-				for (auto& h : s.shelves)
+				for (auto& b : s.stocks)
 				{
-					if (h.itemType == i && !h.baskets.empty() && h.baskets.front().price < u.income)
+					if (b.sellEnabled)
 					{
-						//çwì¸
-						h.today.num++;
-						h.today.sum += h.baskets.front().price;
-						h.baskets.erase(h.baskets.begin());
-						break;
+						auto numSell = b.item.num / b.day;
+						b.item.num -= numSell;
+
+						if (numSell > 0)
+						{
+							auto& h = s.getShelf(b.item.type);
+							const int price = int((h.previous.sum + 1000000) / (h.previous.num + 100));
+							s.sellItem(Basket(Item(b.item.type, numSell), price));
+						}
+						b.day--;
+					}
+				}
+				Erase_if(s.stocks, [](Stock& b) {return b.item.num <= 0; });
+			}
+
+			//ê∂éYï®
+			auto i = Item();
+			i.num = t.market.getNumStock(t.canProduceItemType)>5000 ? 0 : int(t.citizens.size() / 2);
+			i.type = t.canProduceItemType;
+			if (i.num > 0)
+			{
+				//MarketÇÃItemí«â¡
+				for (auto& s : t.market.stores)
+				{
+					if (companies[s.joinedCompanyID].isMunicipal)
+					{
+						auto& h = s.getShelf(i.type);
+						const int price = int((h.previous.sum + 1000000) / (h.previous.num + 100));
+						s.sellItem(Basket(i, price));
 					}
 				}
 			}
 		}
 
-		//StoreÇÃâøäiçXêV
+
 		for (auto& s : t.market.stores)
 		{
 			for (auto& h : s.shelves)
 			{
 				for (auto& b : h.baskets)
 				{
-					b.price = Max(b.price - 10, 0);
+					b.price = Max(b.price - 20, 0);
 				}
 			}
 		}
 
-		//ê∂éYï®
-		auto i = Item();
-		i.num = 5;
-		i.type = t.canProduceItemType;
-		//MarketÇÃItemí«â¡
-		for (auto& s : t.market.stores)
+		//CitizensÇÃçXêV
+		for (auto& u : t.citizens)
 		{
-			bool flag = true;
-			for (const auto& h : s.shelves) if (h.itemType == i.type) flag = false;
-			if (flag) s.shelves.push_back(Shelf(i.type));
-
-			for (auto& h : s.shelves)
+			u.timer += timeSpeed*double(cities[u.joinedCityID].market.stores.size());
+			for (;;)
 			{
-				if (h.itemType == i.type)
+				if (u.timer < 1.0) break;
+				u.timer -= 1.0;
+
+				for (int i = 0; i < iData.size(); i++)
 				{
-					if (h.previous.num > 0) h.baskets.push_back(Basket(i, Random(h.previous.sum / h.previous.num, 10000)));
-					else h.baskets.push_back(Basket(i, 10000));
+					//çwì¸ÇµÇ…çsÇ≠è§ìX
+					if (!t.market.stores.empty())
+					{
+						auto& s = t.market.stores[Random(int(t.market.stores.size() - 1))];
+
+						for (auto& h : s.shelves)
+						{
+							if (h.itemType == i && !h.baskets.empty() && h.baskets.front().price < u.income)
+							{
+								//çwì¸
+								h.buy();
+								break;
+							}
+						}
+					}
 				}
 			}
 		}
+
 	}
 
 
@@ -409,8 +498,3 @@ void	Planet::makeAllRoute()
 		}
 	}
 }
-
-Vehicle::Vehicle(const int& _id)
-	: id(_id), progress(0.0), inProcessRouteID(-1), stayedInNodeID(-1) {}
-Company::Company(const int& _id)
-	: id(_id), name(L"") {}

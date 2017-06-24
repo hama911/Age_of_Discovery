@@ -162,14 +162,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="City.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Node.cpp" />
+    <ClCompile Include="MakeNodes.cpp" />
     <ClCompile Include="PlanetCreator.cpp" />
     <ClCompile Include="PlanetMain.cpp" />
     <ClCompile Include="Pos.cpp" />
-    <ClCompile Include="Route.cpp" />
-    <ClCompile Include="Vehicle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resource.rc" />
@@ -294,7 +291,6 @@
     <ClInclude Include="Node.h" />
     <ClInclude Include="Planet.h" />
     <ClInclude Include="Pos.h" />
-    <ClInclude Include="Route.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

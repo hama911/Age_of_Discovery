@@ -2,7 +2,6 @@
 #include <Siv3D.hpp>
 #include "Node.h"
 #include "City.h"
-#include "Route.h"
 #include "Company.h"
 #include "Item.h"
 
@@ -19,15 +18,18 @@ struct Region
 
 struct Planet
 {
-	Planet(const int& _size, const double& _nodeInterval);
+	Planet(const int& _size);
+	void	makeMapTexture();
+	void	loadData();
 	void	create();
 	void	recreate();
-	void	recreate(const int& _size, const double& _nodeInterval);
 	void	update();
 	void	draw() const;
 	void	makeAllRoute();
 	void	drawInfoBox(const Vec2& _pos, const Vec2& _size) const;
 	double	getHeight(const Pos& _pos) const;
+	bool	readBinary(const String& _filePath);
+	void	makeNodeData(const double& _interval, const String& _outputFilePath);
 
 	double	timeSpeed;
 	Array<IData>	iData;
@@ -41,7 +43,6 @@ struct Planet
 	Array<Path*>	paths;
 	int		selectedCityID;
 	int		size;
-	double	nodeInterval;
 	Mat3x2	transform;
 	PerlinNoise heightNoise;
 	Image	mapImage;

@@ -5,7 +5,7 @@
             "Description" : "陸上の物資輸送手段。容量が小さく、維持費が安い",
             "Range" : 2.0,
             "Space" : 10.0,
-            "Speed" : 0.005,
+            "Speed" : 0.025,
             "IsShip" : false
         },
         {
@@ -21,7 +21,7 @@
             "Description" : "短距離航海用の船。船体が小型で、維持費が安い",
             "Range" : 0.8,
             "Space" : 50.0,
-            "Speed" : 0.01,
+            "Speed" : 0.05,
             "IsShip" : true
         },
         {

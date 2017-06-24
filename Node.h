@@ -5,7 +5,11 @@ struct Node;
 
 struct Path
 {
-	Path(const int& _parentNodeID, const int& _childNodeID);
+	Path::Path(const int& _parentNodeID, const int& _childNodeID)
+		: id(0)
+		, parentNodeID(_parentNodeID)
+		, childNodeID(_childNodeID)
+	{}
 
 	int		id;
 	double	len;	//éOéüå≥ç¿ïWè„ÇÃãóó£
@@ -15,7 +19,20 @@ struct Path
 
 struct Node
 {
-	Node(const int& _id, const Pos& _pos);
+	Node::Node(const int& _id, const Pos& _pos)
+		: id(_id)
+		, joinedRegionID(-1)
+		, isSea(false)
+		, isOcean(false)
+		, isCoast(false)
+		, pos(_pos)
+		, isInQueue(false)
+		, isScaned(false)
+		, cost(0.0)
+		, fromNodeID(-1)
+		, ownCityID(-1)
+	{}
+
 	int		joinedRegionID;
 	int		id;
 	bool	isCoast;
@@ -28,7 +45,20 @@ struct Node
 	bool	isInQueue;
 	bool	isScaned;
 	double	cost;
-
 	int		fromNodeID;
 	int		ownCityID;
+};
+
+struct Route
+{
+	Route(const int& _id)
+		: id(_id) {}
+
+	int		id;
+	String	name;
+	int		destinationNodeID;
+	int		originNodeID;
+	Array<int>	pathIDs;
+	double	totalLength;
+	bool	isSeaRoute;
 };

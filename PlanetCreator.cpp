@@ -2,10 +2,11 @@
 #include "Node.h"
 #include "Pos.h"
 
-Planet::Planet(const int& _size, const double& _nodeInterval)
-	: size(_size), nodeInterval(_nodeInterval), mapImage(size * 2, size)
+Planet::Planet(const int& _size)
+	: size(_size), mapImage(size * 2, size)
 {
 	selectedCityID = -1;
+	loadData();
 	create();
 }
 
@@ -16,48 +17,8 @@ void	Planet::recreate()
 	citizens.clear();
 	create();
 }
-
-void	Planet::recreate(const int& _size, const double& _nodeInterval)
+void	Planet::makeMapTexture()
 {
-	size = _size;
-	nodeInterval = _nodeInterval;
-	recreate();
-}
-
-VData::VData(const int& _id)
-	: id(_id) {}
-void	Planet::create()
-{
-	timeSpeed = 0.01;
-	font = Font(12);
-	transform = Mat3x2::Identity().scale(200).translate(Window::Center());
-	heightNoise = PerlinNoise(Random(UINT32_MAX - 1));
-
-	//Itemデータの読み込み
-	iData.clear();
-	vData.clear();
-	JSONReader json(L"Assets/ItemData.json");
-	for (auto& item : json[L"ItemData"].getArray())
-	{
-		iData.push_back(IData());
-		auto& i = iData.back();
-		i.name = item[L"Name"].getOr<String>(L"none");
-		i.description = item[L"Description"].getOr<String>(L"noData");
-		i.volume = item[L"volume"].getOr<double>(0.01);
-	}
-	for (auto& vehicle : json[L"VehicleData"].getArray())
-	{
-		vData.push_back(VData(int(vData.size())));
-		auto& v = vData.back();
-		v.name = vehicle[L"Name"].getOr<String>(L"none");
-		v.description = vehicle[L"Description"].getOr<String>(L"noData");
-		v.speed = vehicle[L"Speed"].getOr<double>(0.01);
-		v.range = vehicle[L"Range"].getOr<double>(1000);
-		v.space = vehicle[L"Space"].getOr<double>(1000);
-		v.isShip = vehicle[L"IsShip"].getOr<bool>(true);
-	}
-
-	//マップの生成
 	Stopwatch stopwatch(true);
 	for (const auto& p : step(Size(size * 2, size)))
 	{
@@ -70,75 +31,27 @@ void	Planet::create()
 		if (stopwatch.ms() > 16)
 		{
 			stopwatch.restart();
-			Window::SetTitle(L"マップの生成中", int(100.0*double(p.y*size * 2 + p.x) / double(size*size * 2)), L"%");
+			Window::SetTitle(L"マップの生成中 ", (p.y*size * 2 + p.x), L"/", (size*size * 2));
 			if (!System::Update()) return;
 		}
 	}
 	mapTexture = Texture(mapImage);
+}
+void	Planet::create()
+{
+	timeSpeed = 0.01;
+	font = Font(12);
+	transform = Mat3x2::Identity().scale(200).translate(Window::Center());
+	heightNoise = PerlinNoise(Random(UINT32_MAX - 1));
 
-	//Nodeの配置
-	for (double y = -HalfPi + nodeInterval; y < HalfPi; y += nodeInterval)
-	{
-		const int num = int(TwoPi / (nodeInterval / Cos(y)));
-		const double d = TwoPi / double(num);
-		const double a = Random(0.0, d);
-		for (int i = 0; i < num; i++)
-		{
-			const double x = d*i - Pi + a;
-			nodes.push_back(Node(int(nodes.size()), Pos(Vec2(x, y))));
+	//Nodeの生成
+	readBinary(L"nodes.bin");
 
-			//ロードエフェクト
-			if (stopwatch.ms() > 16)
-			{
-				stopwatch.restart();
-				Window::SetTitle(L"ノードの配置中", int(100.0*double(i) / double(num)), L"%");
-				if (!System::Update()) return;
-			}
-		}
-	}
+	//マップの生成
+	makeMapTexture();
 
-	//Nodeの相互接続
-	for (int i = 0; i < nodes.size(); i++)
-	{
-		for (int j = 0; j < nodes.size(); j++)
-		{
-			auto& n1 = nodes[i];
-			auto& n2 = nodes[j];
-			if (&n1 != &n2 && n1.pos.ePos.distanceFrom(n2.pos.ePos) < nodeInterval*1.41)
-				n1.paths.push_back(Path(i, j));
-
-			//ロードエフェクト
-			if (stopwatch.ms() > 16) {
-				stopwatch.restart();
-				Window::SetTitle(L"ノードの接続中", int(100 * double(i*nodes.size() + j) / double(nodes.size()*nodes.size())), L"%");
-				if (!System::Update()) return;
-			}
-		}
-	}
-
-	//Nodeのランダム移動
-	for (int i = 0; i < nodes.size(); i++) {
-		auto& n = nodes[i];
-		double len = 0.0;
-		for (auto& w : n.paths) {
-			const double d = nodes[w.childNodeID].pos.ePos.distanceFrom(nodes[w.parentNodeID].pos.ePos);
-			if (len == 0.0 || len > d) len = d;
-		}
-		Vec2 p = RandomVec2(Random(len / 2.0));
-		p.x /= Cos(n.pos.mPos.y);
-		n.pos.set(n.pos.mPos.movedBy(p));
-		n.isSea = getHeight(n.pos.ePos) < 0.60 ? true : false;
-
-		//ロードエフェクト
-		if (stopwatch.ms() > 16)
-		{
-			stopwatch.restart();
-			Window::SetTitle(L"ノードのランダム移動中", int(100.0*double(i) / double(nodes.size())), L"%");
-			if (!System::Update()) return;
-		}
-	}
-
-	//全Pathの距離の登録
+	//全Nodeの陸海設定の更新
+	for (auto& n : nodes) n.isSea = getHeight(n.pos.ePos) < 0.60 ? true : false;
 	for (auto& n : nodes)
 	{
 		n.isOcean = n.isSea;
@@ -148,20 +61,9 @@ void	Planet::create()
 			if (!n.isSea && childNode.isSea) n.isCoast = true;
 			if (n.isSea && !childNode.isSea) n.isOcean = false;
 			n.isOcean = getHeight(n.pos.ePos) < 0.50 ? true : false;
-			w.len = childNode.pos.ePos.distanceFrom(n.pos.ePos);
 		}
 	}
 
-	//Pathsに登録
-	paths.clear();
-	for (auto& n : nodes)
-	{
-		for (auto& p : n.paths)
-		{
-			p.id = int(paths.size());
-			paths.push_back(&p);
-		}
-	}
 
 	//regionの設定
 	regions.clear();
@@ -230,7 +132,7 @@ void	Planet::create()
 		{
 			t.citizens.push_back(Citizen());
 			auto& s = t.citizens.back();
-			s.income = int(Pow(Random(1.0), 4)*10000.0);
+			s.income = int(Pow(Random(1.0), 1)*10000.0);
 			s.joinedCityID = t.id;
 			s.name = L"ボブ";
 		}
@@ -290,6 +192,7 @@ void	Planet::create()
 		auto& s = t.market.stores.back();
 		s.name = Format(c.name + L"-直営店");
 		s.joinedCompanyID = c.id;
+		s.isMunicipal = false;
 		for (auto& t2 : cities)
 		{
 			if (t2.id != t.id && RandomBool(0.0))
@@ -298,6 +201,7 @@ void	Planet::create()
 				auto& s2 = t2.market.stores.back();
 				s2.name = Format(c.name + L"-支店");
 				s2.joinedCompanyID = c.id;
+				s2.isMunicipal = false;
 
 			}
 		}
@@ -309,11 +213,13 @@ void	Planet::create()
 			auto& v = c.vehicles.back();
 			v.stayedInNodeID = t.joinedNodeID;
 			v.type = 2;
+			v.joinedCityID = t.joinedNodeID;
 
 			c.vehicles.push_back(int(c.vehicles.size()));
 			auto& v2 = c.vehicles.back();
 			v2.stayedInNodeID = t.joinedNodeID;
 			v2.type = 0;
+			v2.joinedCityID = t.joinedNodeID;
 		}
 		else
 		{
@@ -321,7 +227,23 @@ void	Planet::create()
 			auto& v = c.vehicles.back();
 			v.stayedInNodeID = t.joinedNodeID;
 			v.type = 0;
+			v.joinedCityID = t.joinedNodeID;
 		}
+	}
+
+	//市営商会の設置
+	for (auto& t : cities)
+	{
+		companies.push_back(Company(int(companies.size())));
+		auto& c = companies.back();
+		c.name = Format(t.name, L"市営商会");
+		c.isMunicipal = true;
+		t.market.stores.push_back(Store());
+		auto& s = t.market.stores.back();
+		s.joinedCompanyID = c.id;
+		s.isMunicipal = true;
+		s.name = Format(L"[市営]", iData[t.canProduceItemType].name, L"問屋");
+
 	}
 
 

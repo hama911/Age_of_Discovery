@@ -24,6 +24,22 @@ struct Shelf
 	Shelf(const int& _itemType)
 		: itemType(_itemType) {}
 
+	int	getNumStock() const
+	{
+		int num = 0;
+		for (auto& b : baskets) num += b.item.num;
+		return num;
+	}
+	bool	buy()
+	{
+		if (baskets.empty()) return false;
+		today.num++;
+		today.sum += baskets.front().price;
+		baskets.front().item.num--;
+		if (baskets.front().item.num == 0) baskets.erase(baskets.begin());
+		return true;
+	}
+	int		previousStock;	//‘O“úÅIİŒÉ”
 	int		itemType;
 	Array<Basket>	baskets;
 
@@ -33,15 +49,56 @@ struct Shelf
 
 struct Store
 {
+	bool	sellItem(const Basket& _basket)
+	{
+		//’I‚ª‚ ‚é‚©‚Ç‚¤‚©
+		bool flag = true;
+		for (const auto& h : shelves) if (h.itemType == _basket.item.type) flag = false;
+		if (flag) shelves.push_back(Shelf(_basket.item.type));
+
+		for (auto& h : shelves)
+		{
+			if (h.itemType == _basket.item.type)
+			{
+				if (h.baskets.empty())  h.baskets.push_back(_basket);
+				else
+				{
+					for (auto i = h.baskets.begin(); ; i++)
+					{
+						if (i->price > _basket.price)
+						{
+							h.baskets.emplace(i, _basket);
+							break;
+						}
+						else if (i == h.baskets.end())
+						{
+							h.baskets.push_back(_basket);
+							break;
+						}
+					}
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	Shelf&	getShelf(const int& _itemType)
+	{
+		for (auto& h : shelves) if (h.itemType == _itemType) return h;
+		shelves.push_back(Shelf(_itemType));
+		return shelves.back();
+	}
+
 	String	name;
 	int		joinedCompanyID;
 	Array<Shelf>	shelves;
-	Array<Item>		items;
+	Array<Stock>	stocks;
+	bool	isMunicipal;
 };
 
 struct Market
 {
-	//‘O“ú‚Ìæˆø‰¿Ši‚ğæ“¾
 	TradeLog	getTradeRatePrevious(const int& _itemType) const
 	{
 		TradeLog tradeLog(_itemType);
@@ -59,7 +116,14 @@ struct Market
 		}
 		return tradeLog;
 	}
+	int	getNumStock(const int& _itemType) const
+	{
+		int num = 0;
+		for (auto& s : stores)
+			for (auto& h : s.shelves)
+				if (h.itemType == _itemType) for (auto& b : h.baskets) num += b.item.num;
+		return num;
+	}
 
-	String	name;
 	Array<Store> stores;
 };
