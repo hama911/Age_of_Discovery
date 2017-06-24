@@ -26,22 +26,21 @@ struct VData
 
 struct Vehicle
 {
-	Vehicle(const int& _id)
-		: id(_id)
-		, progress(0.0)
+	Vehicle(const int& _type, const int& _stayedInNodeID)
+		: progress(0.0)
 		, inProcessRouteID(-1)
-		, stayedInNodeID(-1)
-		, joinedCityID(-1)
+		, stayedInNodeID(_stayedInNodeID)
+		, joinedNodeID(_stayedInNodeID)
+		, type(_type)
 		, stock(Item())
 	{}
 
 
-	int		id;
 	int		type;
 	double	progress;
 	int		inProcessRouteID;
 	int		stayedInNodeID;
-	int		joinedCityID;	//ÉÅÉCÉìÇ…äàìÆÇ∑ÇÈìsés
+	int		joinedNodeID;
 	Stock	stock;
 };
 

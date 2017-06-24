@@ -238,7 +238,7 @@ void	Planet::update()
 				bool flag = false;
 				for (auto& r : routes)
 				{
-					if (v.joinedCityID != v.stayedInNodeID && r.destinationNodeID != v.joinedCityID) continue;
+					if (v.joinedNodeID != v.stayedInNodeID && r.destinationNodeID != v.joinedNodeID) continue;
 					if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData[v.type].isShip && r.totalLength < vData[v.type].range) flag = true;
 				}
 				if (flag)
@@ -246,7 +246,7 @@ void	Planet::update()
 					for (;;)
 					{
 						auto& r = routes[Random(int(routes.size() - 1))];
-						if (v.joinedCityID != v.stayedInNodeID && r.destinationNodeID != v.joinedCityID) continue;
+						if (v.joinedNodeID != v.stayedInNodeID && r.destinationNodeID != v.joinedNodeID) continue;
 						if (r.originNodeID == v.stayedInNodeID && r.isSeaRoute == vData[v.type].isShip && r.totalLength < vData[v.type].range)
 						{
 							v.inProcessRouteID = r.id;
@@ -267,7 +267,7 @@ void	Planet::update()
 					v.progress = 0.0;
 
 					auto& t = cities[nodes[v.stayedInNodeID].ownCityID];
-					if (v.joinedCityID == v.stayedInNodeID)	//‰Æ‚É’…‚¢‚½‚ç
+					if (v.joinedNodeID == v.stayedInNodeID)	//‰Æ‚É’…‚¢‚½‚ç
 					{
 						if (v.stock.item.num > 0)
 						{
@@ -355,7 +355,7 @@ void	Planet::update()
 
 			//¶ŽY•¨
 			auto i = Item();
-			i.num = t.market.getNumStock(t.canProduceItemType)>5000 ? 0 : int(t.citizens.size() / 2);
+			i.num = t.market.getNumStock(t.canProduceItemType) > 5000 ? 0 : int(t.citizens.size() / 2);
 			i.type = t.canProduceItemType;
 			if (i.num > 0)
 			{

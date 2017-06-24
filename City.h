@@ -6,9 +6,13 @@ struct Node;
 
 struct Citizen
 {
-	Citizen() : timer(Random(1.0)) {}
+	Citizen(const int& _joinedCityID, const int& _income)
+		: joinedCityID(_joinedCityID)
+		, income(_income)
+	{
+		timer = Random(1.0);
+	}
 
-	String	name;
 	int		joinedCityID;
 	double	timer;
 	int		income;
@@ -16,7 +20,10 @@ struct Citizen
 
 struct City
 {
-	City(const int& _id) : id(_id), money(0) {}
+	City(const int& _id, const int& _joinedNodeID)
+		: id(_id)
+		, joinedNodeID(_joinedNodeID)
+		, money(0) {}
 
 	double	getDrawSize() const { return Log2(citizens.size())*0.0025; }
 

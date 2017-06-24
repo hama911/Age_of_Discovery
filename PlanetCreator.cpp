@@ -95,29 +95,22 @@ void	Planet::create()
 
 	//Cityの配置
 	int numCities = 50;
-	for (;;)
+	int numCoastCity = int(regions.size());
+	while (numCoastCity > 0)
 	{
 		auto& n = nodes[Random(nodes.size() - 1)];
 		if (n.joinedRegionID != -1 && !regions[n.joinedRegionID].hasCity && n.isCoast)
 		{
-			cities.push_back(int(cities.size()));
-			auto& c = cities.back();
-			c.joinedNodeID = n.id;
-			nodes[c.joinedNodeID].ownCityID = c.id;
+			cities.push_back({ int(cities.size()), n.id });
+			n.ownCityID = int(cities.size()) - 1;
 			regions[n.joinedRegionID].hasCity = true;
 			numCities--;
-
-			bool flag = true;
-			for (const auto& nt : nodes)
-			{
-				if (nt.joinedRegionID != -1 && !regions[nt.joinedRegionID].hasCity) flag = false;
-			}
-			if (flag) break;
+			numCoastCity--;
 		}
 	}
 
 	for (int i = 0; i < numCities; i++) {
-		cities.push_back(int(cities.size()));
+		cities.push_back({ int(cities.size()), -1 });
 		auto& c = cities.back();
 		do c.joinedNodeID = Random(int(nodes.size()) - 1);
 		while (nodes[c.joinedNodeID].ownCityID != -1 || nodes[c.joinedNodeID].isSea);
@@ -129,13 +122,7 @@ void	Planet::create()
 	{
 		int numCitizens = Random(100, 1000);
 		for (int i = 0; i < numCitizens; i++)
-		{
-			t.citizens.push_back(Citizen());
-			auto& s = t.citizens.back();
-			s.income = int(Pow(Random(1.0), 1)*10000.0);
-			s.joinedCityID = t.id;
-			s.name = L"ボブ";
-		}
+			t.citizens.push_back({ t.id, int(Pow(Random(1.0), 1)*10000.0) });
 	}
 
 	//Cityに名前を設定
@@ -209,25 +196,12 @@ void	Planet::create()
 		//Vehicleの追加
 		if (nodes[t.joinedNodeID].isCoast)
 		{
-			c.vehicles.push_back(int(c.vehicles.size()));
-			auto& v = c.vehicles.back();
-			v.stayedInNodeID = t.joinedNodeID;
-			v.type = 2;
-			v.joinedCityID = t.joinedNodeID;
-
-			c.vehicles.push_back(int(c.vehicles.size()));
-			auto& v2 = c.vehicles.back();
-			v2.stayedInNodeID = t.joinedNodeID;
-			v2.type = 0;
-			v2.joinedCityID = t.joinedNodeID;
+			c.vehicles.push_back({ 0, t.joinedNodeID });
+			c.vehicles.push_back({ 2, t.joinedNodeID });
 		}
 		else
 		{
-			c.vehicles.push_back(int(c.vehicles.size()));
-			auto& v = c.vehicles.back();
-			v.stayedInNodeID = t.joinedNodeID;
-			v.type = 0;
-			v.joinedCityID = t.joinedNodeID;
+			c.vehicles.push_back({ 0, t.joinedNodeID });
 		}
 	}
 
